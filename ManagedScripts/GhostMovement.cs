@@ -272,6 +272,8 @@ public class GhostMovement : Script
                 playerMoved = true;
                 speed += 0.001f;
 
+                PlayMonsterWalkingSound();
+
                 break;
 
             case GhostEvent.MovingToDoor:
@@ -298,10 +300,8 @@ public class GhostMovement : Script
                         currentEvent = GhostEvent.Nothing;
                     }
                 }
-                AudioComponent audio = gameObject.GetComponent<AudioComponent>();
-                int ran_num = RandomNumberGenerator.GetInt32(7);
-                audio.set3DCoords(transform.GetPosition(), monsterAlert[ran_num]);
-                audio.play(monsterAlert[ran_num]);
+
+                PlayMonsterWalkingSound();
 
                 break;
 
@@ -317,11 +317,15 @@ public class GhostMovement : Script
                     return;
                 }
 
+                PlayMonsterWalkingSound();
+
                 BedroomHidingEvent();
 
                 break;
 
             case GhostEvent.LivingDiningRoomEvent: // 1. LivingDiningRoomEvent => move from dining room - living room door to dining room - main hall door & disappear
+
+                PlayMonsterWalkingSound();
 
                 LivingDiningRoomEvent();
 
@@ -340,11 +344,15 @@ public class GhostMovement : Script
                     return;
                 }
 
+                PlayMonsterWalkingSound();
+
                 LivingRoomHidingEvent();
 
                 break;
 
             case GhostEvent.DiningRoomEvent:
+
+                PlayMonsterWalkingSound();
 
                 DiningRoomEvent();
 
@@ -362,11 +370,15 @@ public class GhostMovement : Script
                     return;
                 }
 
+                PlayMonsterWalkingSound();
+
                 GalleryHidingEvent();
 
                 break;
 
             case GhostEvent.FinalChasingEvent:
+
+                PlayMonsterWalkingSound();
 
                 FinalChaseEvent();
 
@@ -414,8 +426,6 @@ public class GhostMovement : Script
         walkingSoundCounter = 0;
         audio.set3DCoords(transform.GetPosition(), walkingSounds[walkingSoundCounter]);
         audio.play(walkingSounds[walkingSoundCounter]);
-        Vector3 temp = new Vector3(1000, 1000, 0);
-        //audio.set3DCoords(temp/*transform.GetPosition()*/ , walkingSounds[walkingSoundCounter]);
         currentEvent = GhostEvent.PlayingWalkingSound;
     }
     public bool PlayMonsterWalkingSound()
@@ -424,21 +434,26 @@ public class GhostMovement : Script
 
         if (audio.finished(walkingSounds[walkingSoundCounter]))
         {
+            if(walkingSoundCounter >= 7)
+            {
+                walkingSoundCounter = 0;
+            }
+            
             if (playSoundTimer < 0)
             {
                 audio.stop(walkingSounds[walkingSoundCounter]);
                 ++walkingSoundCounter;
 
-                if (walkingSoundCounter == 7)  // finished
-                {
-                    audio.play("pc_afterscare_heartbeat");
-                    return false;
-                }
+                //if (walkingSoundCounter == 7)  // finished
+                //{
+                //    audio.play("pc_afterscare_heartbeat");
+                //    return false;
+                //}
 
                 audio.set3DCoords(transform.GetPosition(), walkingSounds[walkingSoundCounter]);
-                audio.play(walkingSounds[walkingSoundCounter]);
                 Console.WriteLine("Monster position: " + transform.GetPosition().X + ", " + transform.GetPosition().Y + ", " + transform.GetPosition().Z);
-                playSoundTimer = soundSpeed - walkingSoundCounter * 0.05f;
+                audio.play(walkingSounds[walkingSoundCounter]);
+                playSoundTimer = soundSpeed - walkingSoundCounter * 0.005f;
                 //if (!triggerBedroomHideEvent)
                 //{
                 //    int ra = RandomNumberGenerator.GetInt32(8);
@@ -515,14 +530,14 @@ public class GhostMovement : Script
     {
         if (startEvent) // Initialize variables (teleporting monster to starting position etc)
         {
-            eventStep = -1;
+            eventStep = -2;
             //Console.WriteLine("initialized bedroom hiding event");
 
             startEvent = false;
-            bedroomMonsterAppearTimer = 5.0f;
+            bedroomMonsterAppearTimer = 2.0f;
 
             previousEvent = GhostEvent.BedroomHidingEvent;
-            return;
+            gameObject.GetComponent<AudioComponent>().play("door_rattle");
         }
 
         Vector3 originalPosition = transform.GetPosition();
@@ -531,6 +546,16 @@ public class GhostMovement : Script
 
         switch (eventStep)
         {
+            case -2:
+
+                if (gameObject.GetComponent<AudioComponent>().finished("door_rattle"))
+                {
+                    gameObject.GetComponent<AudioComponent>().stop("door_rattle");
+                    ++eventStep;
+                }
+
+                break;
+
             case -1:
             
                 if (bedroomMonsterAppearTimer <= 0.0f)
@@ -652,19 +677,29 @@ public class GhostMovement : Script
         if (startEvent) // Initialize variables
         {
             livingRoomHidingTimer = 1.0f;
-            eventStep = -1;
+            eventStep = -2;
 
             startEvent = false;
             livingRoomMonsterAppearTimer = 4.0f;
 
             previousEvent = GhostEvent.LivingRoomHidingEvent;
-            return;
+            gameObject.GetComponent<AudioComponent>().play("door_rattle");
 
             //Console.WriteLine("initialized living room hiding event");
         }
 
         switch (eventStep)
         {
+            case -2:
+
+                if (gameObject.GetComponent<AudioComponent>().finished("door_rattle"))
+                {
+                    gameObject.GetComponent<AudioComponent>().stop("door_rattle");
+                    ++eventStep;
+                }
+
+                break;
+
             case -1:
 
                 if (livingRoomMonsterAppearTimer <= 0.0f)
@@ -703,7 +738,8 @@ public class GhostMovement : Script
             case 2: // Move to living room - dining room door
 
                 livingRoomHideEventStarted = true;
-                if (MoveTo(new Vector2(156.0f, -379.0f), 2.0f))
+                //if (MoveTo(new Vector2(156.0f, -379.0f), 2.0f))
+                if (MoveTo(new Vector2(200.0f, -379.0f), 2.0f))
                 {
                     ++eventStep;
                 }
@@ -712,10 +748,10 @@ public class GhostMovement : Script
 
             case 3: // Move to picture in dining room
 
-                if (MoveTo(new Vector2(-58.0f, -1060.0f), 2.0f))
-                {
+                //if (MoveTo(new Vector2(-58.0f, -1060.0f), 2.0f))
+                //{
                     ++eventStep;
-                }
+                //}
 
                 break;
 
@@ -723,6 +759,9 @@ public class GhostMovement : Script
 
                 livingRoomHideEventDone = true;
                 currentEvent = GhostEvent.Nothing;
+
+                transform.SetPositionX(-58.0f);
+                transform.SetPositionZ(-1060.0f);
 
                 transform.SetRotationY((float)Math.PI);
 
